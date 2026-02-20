@@ -1,0 +1,42 @@
+# Local environment variables (never commit real secrets)
+.env
+.env.*
+!.env.example
+.envrc
+
+# Common secret/credential files
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
+id_rsa
+id_rsa.pub
+
+# Cloud and provider credentials
+.aws/
+.gcp/
+.google/
+.terraform/
+
+# Local config and logs
+*.local
+*.log
+.dexter/
+.finmind/
+.DS_Store
+
+# Node/Bun artifacts
+node_modules/
+dist/
+coverage/
+bun.lock
+
+# Planning & internal docs
+FINMIND_PHASED_EXECUTION_PLAN.md
+DEXTER_WRAPPER_PLAN.md
+FINMIND_50_FEATURES_STRICT_PROMPT.md
+FinMind_Frontend_Redesign*.docx
+project_presentation.html
