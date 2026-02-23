@@ -15,6 +15,13 @@ import {
 import { getBearerToken, verifyAccessToken } from './auth/jwt.js';
 import { isAppError } from './errors.js';
 import { getHealthStatus } from './health.js';
+import {
+  getMarketHistory,
+  getMarketSnapshot,
+  normalizeInterval,
+  normalizeRange,
+  normalizeSymbols
+} from './market/realtime.js';
 import { QueryQueue } from './research/query-queue.js';
 import { enrichArtifactsWithMarketData } from './research/market-artifacts.js';
 import { createAppServices } from './services/index.js';
@@ -35,7 +42,9 @@ dotenv.config({ path: '../../.env' });
 const app = express();
 const port = Number(process.env.PORT ?? 3001);
 const services = createAppServices();
-const queryQueue = new QueryQueue((userId, input) => services.researchService.executeQuery(userId, input));
+const queryQueue = new QueryQueue((userId, input) =>
+  services.researchService.executeQuery(userId, input)
+);
 
 app.use(cors());
 app.use(express.json());
@@ -94,6 +103,8 @@ app.get('/', (_req, res) => {
         '/api/workflows/presets',
         '/api/views',
         '/api/reports/compose',
+        '/api/market/realtime',
+        '/api/market/history/:ticker',
         '/api/portfolio/*',
         '/api/alerts*',
         '/api/journal*',
@@ -200,9 +211,7 @@ async function requireAdminUserId(req: Request): Promise<string> {
   return userId;
 }
 
-function asyncHandler(
-  handler: (req: Request, res: Response, next: NextFunction) => Promise<void>
-) {
+function asyncHandler(handler: (req: Request, res: Response, next: NextFunction) => Promise<void>) {
   return (req: Request, res: Response, next: NextFunction) => {
     void handler(req, res, next).catch(next);
   };
@@ -269,7 +278,11 @@ app.post(
       });
       return;
     }
-    const updated = services.adminService.updateUserRole(actorUserId, userId, role as 'user' | 'admin');
+    const updated = services.adminService.updateUserRole(
+      actorUserId,
+      userId,
+      role as 'user' | 'admin'
+    );
     res.status(200).json(updated);
   })
 );
@@ -383,10 +396,64 @@ app.get(
 );
 
 app.get(
+  '/api/market/realtime',
+  asyncHandler(async (req, res) => {
+    await requireUserId(req);
+    const symbols = normalizeSymbols(
+      typeof req.query.symbols === 'string' ? req.query.symbols : undefined
+    );
+    const snapshot = await getMarketSnapshot(symbols);
+    res.setHeader('cache-control', 'no-store');
+    res.status(200).json(snapshot);
+  })
+);
+
+app.get(
+  '/api/market/history/:ticker',
+  asyncHandler(async (req, res) => {
+    await requireUserId(req);
+    const ticker = String(req.params.ticker ?? '');
+    const range = normalizeRange(typeof req.query.range === 'string' ? req.query.range : undefined);
+    const interval = normalizeInterval(
+      typeof req.query.interval === 'string' ? req.query.interval : undefined
+    );
+
+    try {
+      const history = await getMarketHistory(ticker, { range, interval });
+      res.setHeader('cache-control', 'no-store');
+      res.status(200).json(history);
+      return;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to load chart data';
+      if (message === 'Invalid symbol') {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message,
+            requestId: getRequestId(req)
+          }
+        });
+        return;
+      }
+
+      res.status(502).json({
+        error: {
+          code: 'UPSTREAM_ERROR',
+          message,
+          requestId: getRequestId(req)
+        }
+      });
+    }
+  })
+);
+
+app.get(
   '/api/market/ticker/:ticker',
   asyncHandler(async (req, res) => {
     await requireUserId(req);
-    const ticker = String(req.params.ticker ?? '').trim().toUpperCase();
+    const ticker = String(req.params.ticker ?? '')
+      .trim()
+      .toUpperCase();
     if (!ticker) {
       res.status(400).json({
         error: {
@@ -517,7 +584,13 @@ app.post(
       verbosity?: 'short' | 'standard' | 'deep';
     };
 
-    if (!payload.sessionId || !payload.name || !payload.mode || !payload.workflowId || !payload.verbosity) {
+    if (
+      !payload.sessionId ||
+      !payload.name ||
+      !payload.mode ||
+      !payload.workflowId ||
+      !payload.verbosity
+    ) {
       res.status(400).json({
         error: {
           code: 'VALIDATION_ERROR',
@@ -645,7 +718,13 @@ app.post(
       threshold?: number;
       metric?: string;
     };
-    if (!payload.ticker || !payload.kind || !payload.operator || payload.threshold === undefined || !payload.metric) {
+    if (
+      !payload.ticker ||
+      !payload.kind ||
+      !payload.operator ||
+      payload.threshold === undefined ||
+      !payload.metric
+    ) {
       res.status(400).json({
         error: {
           code: 'VALIDATION_ERROR',
