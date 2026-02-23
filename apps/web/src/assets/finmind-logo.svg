@@ -1,0 +1,23 @@
+<svg width="240" height="240" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="finmind-bg" x1="30" y1="26" x2="204" y2="214" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#182B4E" />
+      <stop offset="1" stop-color="#0F1C34" />
+    </linearGradient>
+    <linearGradient id="finmind-accent" x1="70" y1="76" x2="166" y2="170" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5CC8FF" />
+      <stop offset="1" stop-color="#3B82F6" />
+    </linearGradient>
+  </defs>
+
+  <rect x="14" y="14" width="212" height="212" rx="50" fill="url(#finmind-bg)" />
+  <rect x="22" y="22" width="196" height="196" rx="42" stroke="#4D6C9E" stroke-opacity="0.45" stroke-width="2" />
+
+  <path d="M74 74H166" stroke="#2E4D7A" stroke-width="2" stroke-linecap="round" />
+  <path d="M74 168H166" stroke="#2E4D7A" stroke-width="2" stroke-linecap="round" />
+
+  <path d="M84 156V86H112V100H98V156H84Z" fill="url(#finmind-accent)" />
+  <path d="M122 156V86H136L154 116L172 86H186V156H172V112L157 136H151L136 112V156H122Z" fill="#D9EEFF" />
+
+  <path d="M84 124H112" stroke="#85D6FF" stroke-width="3" stroke-linecap="round" />
+</svg>

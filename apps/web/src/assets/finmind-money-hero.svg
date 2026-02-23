@@ -1,0 +1,63 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="152" y1="74" x2="1674" y2="986" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0C2445" />
+      <stop offset="0.52" stop-color="#12365F" />
+      <stop offset="1" stop-color="#0F2847" />
+    </linearGradient>
+    <linearGradient id="bill" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#5FB8FF" stop-opacity="0.35" />
+      <stop offset="1" stop-color="#3C83D8" stop-opacity="0.12" />
+    </linearGradient>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#bg)" />
+
+  <g opacity="0.32">
+    <rect x="114" y="196" width="426" height="220" rx="28" fill="url(#bill)" />
+    <rect x="164" y="246" width="326" height="120" rx="18" stroke="#8AD0FF" stroke-opacity="0.45" stroke-width="3" />
+    <circle cx="326" cy="306" r="34" stroke="#BEE6FF" stroke-width="3" />
+    <text x="315" y="316" fill="#D9EEFF" font-size="34" font-family="Inter, Arial, sans-serif" font-weight="700">$</text>
+  </g>
+
+  <g opacity="0.26">
+    <rect x="1250" y="140" width="520" height="260" rx="30" fill="url(#bill)" />
+    <rect x="1302" y="198" width="416" height="146" rx="20" stroke="#9ED7FF" stroke-opacity="0.45" stroke-width="3" />
+    <circle cx="1510" cy="272" r="40" stroke="#D7EFFF" stroke-width="3" />
+    <text x="1495" y="286" fill="#E5F5FF" font-size="38" font-family="Inter, Arial, sans-serif" font-weight="700">$</text>
+  </g>
+
+  <g opacity="0.2">
+    <rect x="590" y="700" width="740" height="250" rx="34" fill="url(#bill)" />
+    <rect x="680" y="768" width="560" height="114" rx="16" stroke="#9ED7FF" stroke-opacity="0.38" stroke-width="3" />
+    <path d="M700 840C786 770 864 792 926 822C989 852 1068 868 1188 782" stroke="#A8DEFF" stroke-width="4" stroke-linecap="round" />
+  </g>
+
+  <g opacity="0.24">
+    <circle cx="362" cy="774" r="74" fill="#174A79" />
+    <circle cx="362" cy="774" r="57" stroke="#8ED1FF" stroke-width="4" />
+    <path d="M362 730V818" stroke="#C9E9FF" stroke-width="4" stroke-linecap="round" />
+    <path d="M388 748C382 741 372 737 361 737H346C331 737 319 747 319 760C319 772 327 780 339 783L385 796C397 799 405 807 405 819C405 832 393 842 378 842H363C352 842 342 838 336 831" stroke="#D9EEFF" stroke-width="4" stroke-linecap="round" />
+  </g>
+
+  <g opacity="0.2">
+    <circle cx="1550" cy="690" r="90" fill="#174A79" />
+    <circle cx="1550" cy="690" r="70" stroke="#8ED1FF" stroke-width="4" />
+    <path d="M1550 635V745" stroke="#C9E9FF" stroke-width="4" stroke-linecap="round" />
+    <path d="M1582 656C1574 647 1562 643 1549 643H1531C1512 643 1497 655 1497 672C1497 687 1508 696 1523 700L1577 716C1592 720 1603 729 1603 744C1603 761 1588 773 1569 773H1551C1538 773 1526 769 1518 760" stroke="#D9EEFF" stroke-width="4" stroke-linecap="round" />
+  </g>
+
+  <g opacity="0.2">
+    <path d="M100 928C284 780 474 786 658 880C850 978 1038 972 1258 808C1428 681 1604 660 1820 798" stroke="#86CCFF" stroke-width="5" stroke-linecap="round" />
+    <circle cx="658" cy="880" r="10" fill="#BFE8FF" />
+    <circle cx="1258" cy="808" r="10" fill="#BFE8FF" />
+  </g>
+
+  <g opacity="0.16">
+    <text x="202" y="602" fill="#D7EEFF" font-size="56" font-family="Inter, Arial, sans-serif" font-weight="700">$</text>
+    <text x="1098" y="218" fill="#D7EEFF" font-size="48" font-family="Inter, Arial, sans-serif" font-weight="700">$</text>
+    <text x="1730" y="538" fill="#D7EEFF" font-size="52" font-family="Inter, Arial, sans-serif" font-weight="700">$</text>
+    <text x="840" y="612" fill="#D7EEFF" font-size="42" font-family="Inter, Arial, sans-serif" font-weight="700">$</text>
+    <text x="510" y="1020" fill="#D7EEFF" font-size="40" font-family="Inter, Arial, sans-serif" font-weight="700">$</text>
+  </g>
+</svg>
