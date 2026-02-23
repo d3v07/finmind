@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Bun wrapper for environments where ~/.bun/bin isn't on PATH (Codex, CI shells, etc.).
+# Prefer bun from PATH when available, otherwise fall back to the default install location.
+
+if command -v bun >/dev/null 2>&1; then
+  exec bun "$@"
+fi
+
+if [[ -x "${HOME}/.bun/bin/bun" ]]; then
+  exec "${HOME}/.bun/bin/bun" "$@"
+fi
+
+echo "bun not found. Install bun or add it to PATH. See https://bun.sh/docs/installation" >&2
+exit 127
+
