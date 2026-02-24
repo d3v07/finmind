@@ -62,12 +62,9 @@ describe('market realtime', () => {
     expect(snapshot.partial).toBe(true);
     expect(snapshot.quotes).toHaveLength(1);
     expect(snapshot.quotes[0]?.symbol).toBe('AAPL');
-    expect(snapshot.errors).toEqual([
-      {
-        symbol: 'MSFT',
-        message: 'symbol missing from upstream response'
-      }
-    ]);
+    expect(snapshot.errors).toHaveLength(1);
+    expect(snapshot.errors[0]?.symbol).toBe('MSFT');
+    expect(snapshot.errors[0]?.message).toContain('chart fallback failed');
   });
 
   test('returns error snapshot when upstream request fails', async () => {
@@ -79,12 +76,68 @@ describe('market realtime', () => {
 
     expect(snapshot.partial).toBe(true);
     expect(snapshot.quotes).toHaveLength(0);
-    expect(snapshot.errors).toEqual([
-      {
-        symbol: 'AAPL',
-        message: 'network unavailable'
+    expect(snapshot.errors).toHaveLength(1);
+    expect(snapshot.errors[0]?.symbol).toBe('AAPL');
+    expect(snapshot.errors[0]?.message).toContain('network unavailable');
+  });
+
+  test('falls back to chart endpoint when quote endpoint is unavailable', async () => {
+    globalThis.fetch = (async (input: unknown) => {
+      const url = String(input);
+
+      if (url.includes('/v7/finance/quote')) {
+        return jsonResponse({}, 503);
       }
-    ]);
+
+      if (url.includes('/chart/AAPL')) {
+        return jsonResponse({
+          chart: {
+            result: [
+              {
+                meta: {
+                  symbol: 'AAPL',
+                  shortName: 'Apple',
+                  currency: 'USD',
+                  exchangeName: 'NMS',
+                  marketState: 'REGULAR',
+                  chartPreviousClose: 100
+                },
+                timestamp: [1_737_900_000, 1_737_900_060],
+                indicators: {
+                  quote: [
+                    {
+                      close: [101, 105],
+                      volume: [1000, 1500]
+                    }
+                  ]
+                }
+              }
+            ],
+            error: null
+          }
+        });
+      }
+
+      return jsonResponse({
+        chart: {
+          result: [],
+          error: {
+            description: 'symbol not found'
+          }
+        }
+      });
+    }) as unknown as typeof fetch;
+
+    const snapshot = await getMarketSnapshot(['AAPL', 'MSFT']);
+
+    expect(snapshot.quotes).toHaveLength(1);
+    expect(snapshot.quotes[0]?.symbol).toBe('AAPL');
+    expect(snapshot.quotes[0]?.price).toBe(105);
+    expect(snapshot.quotes[0]?.changePercent).toBe(5);
+    expect(snapshot.partial).toBe(true);
+    expect(snapshot.errors).toHaveLength(1);
+    expect(snapshot.errors[0]?.symbol).toBe('MSFT');
+    expect(snapshot.errors[0]?.message).toContain('chart fallback failed');
   });
 
   test('builds intraday market history points', async () => {

@@ -29,6 +29,15 @@ type YahooChartResponse = {
         symbol?: string;
         currency?: string;
         exchangeName?: string;
+        shortName?: string;
+        marketState?: string;
+        regularMarketPrice?: number;
+        regularMarketTime?: number;
+        chartPreviousClose?: number;
+        previousClose?: number;
+        regularMarketOpen?: number;
+        regularMarketDayHigh?: number;
+        regularMarketDayLow?: number;
       };
       timestamp?: number[];
       indicators?: {
@@ -200,6 +209,107 @@ function buildMarketQuote(result: YahooQuoteResult): MarketQuote | null {
   };
 }
 
+function buildMarketQuoteFromChart(
+  symbol: string,
+  payload: YahooChartResponse
+): MarketQuote | null {
+  const result = payload.chart?.result?.[0];
+  if (!result) {
+    return null;
+  }
+
+  const meta = result.meta ?? {};
+  const timestamps = result.timestamp ?? [];
+  const closeSeries = result.indicators?.quote?.[0]?.close ?? [];
+  const volumeSeries = result.indicators?.quote?.[0]?.volume ?? [];
+
+  let latestPrice: number | null = toFiniteNumber(meta.regularMarketPrice);
+  let latestTimestamp: number | null = toFiniteNumber(meta.regularMarketTime);
+  let latestVolume: number | null = null;
+
+  const finitePrices: number[] = [];
+
+  for (let index = 0; index < closeSeries.length; index += 1) {
+    const close = toFiniteNumber(closeSeries[index]);
+    const timestamp = toFiniteNumber(timestamps[index]);
+    if (close === null) {
+      continue;
+    }
+
+    finitePrices.push(close);
+    latestPrice = close;
+    latestTimestamp = timestamp;
+    latestVolume = toFiniteNumber(volumeSeries[index]);
+  }
+
+  if (latestPrice === null) {
+    return null;
+  }
+
+  const previousClose =
+    toFiniteNumber(meta.chartPreviousClose) ?? toFiniteNumber(meta.previousClose);
+  const change = previousClose === null ? 0 : latestPrice - previousClose;
+  const changePercent =
+    previousClose === null || previousClose === 0 ? 0 : (change / previousClose) * 100;
+
+  const dayHigh = toFiniteNumber(meta.regularMarketDayHigh) ?? Math.max(...finitePrices);
+  const dayLow = toFiniteNumber(meta.regularMarketDayLow) ?? Math.min(...finitePrices);
+  const open = toFiniteNumber(meta.regularMarketOpen);
+
+  return {
+    symbol,
+    name: (meta.shortName ?? symbol).trim(),
+    currency: (meta.currency ?? 'USD').trim(),
+    exchange: (meta.exchangeName ?? 'Unknown').trim(),
+    marketState: (meta.marketState ?? 'UNKNOWN').trim(),
+    price: latestPrice,
+    change,
+    changePercent,
+    previousClose,
+    open,
+    dayHigh,
+    dayLow,
+    volume: latestVolume,
+    marketCap: null,
+    updatedAt: toIsoFromUnixSeconds(latestTimestamp)
+  };
+}
+
+async function fetchMarketQuoteFromChart(
+  symbol: string
+): Promise<{ quote: MarketQuote | null; error: string | null }> {
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=1d&interval=1m&includePrePost=false&events=div,splits`;
+
+  try {
+    const payload = await fetchJson<YahooChartResponse>(url);
+    const upstreamError = payload.chart?.error;
+    if (upstreamError) {
+      return {
+        quote: null,
+        error: upstreamError.description ?? upstreamError.code ?? 'chart fallback failed'
+      };
+    }
+
+    const quote = buildMarketQuoteFromChart(symbol, payload);
+    if (!quote) {
+      return {
+        quote: null,
+        error: 'chart fallback returned no quote data'
+      };
+    }
+
+    return {
+      quote,
+      error: null
+    };
+  } catch (error) {
+    return {
+      quote: null,
+      error: error instanceof Error ? error.message : 'chart fallback request failed'
+    };
+  }
+}
+
 export async function getMarketSnapshot(symbols: string[]): Promise<MarketSnapshot> {
   const deduped = [
     ...new Set(
@@ -212,24 +322,15 @@ export async function getMarketSnapshot(symbols: string[]): Promise<MarketSnapsh
 
   const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(requested.join(','))}`;
 
-  let payload: YahooQuoteResponse;
+  let payload: YahooQuoteResponse | null = null;
+  let quoteRequestError: string | null = null;
   try {
     payload = await fetchJson<YahooQuoteResponse>(url);
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'upstream request failed';
-    return {
-      asOf: new Date().toISOString(),
-      source: 'yahoo-finance',
-      partial: true,
-      quotes: [],
-      errors: requested.map((symbol) => ({
-        symbol,
-        message
-      }))
-    };
+    quoteRequestError = error instanceof Error ? error.message : 'upstream request failed';
   }
 
-  const quoteResults = payload.quoteResponse?.result ?? [];
+  const quoteResults = payload?.quoteResponse?.result ?? [];
   const bySymbol = new Map<string, MarketQuote>();
 
   for (const item of quoteResults) {
@@ -239,14 +340,30 @@ export async function getMarketSnapshot(symbols: string[]): Promise<MarketSnapsh
     }
   }
 
+  const missingSymbols = requested.filter((symbol) => !bySymbol.has(symbol));
+  const fallbackResults = await Promise.all(
+    missingSymbols.map(async (symbol) => ({
+      symbol,
+      ...(await fetchMarketQuoteFromChart(symbol))
+    }))
+  );
+
   const errors: MarketSnapshot['errors'] = [];
-  for (const symbol of requested) {
-    if (!bySymbol.has(symbol)) {
-      errors.push({
-        symbol,
-        message: 'symbol missing from upstream response'
-      });
+  for (const fallback of fallbackResults) {
+    if (fallback.quote) {
+      bySymbol.set(fallback.symbol, fallback.quote);
+      continue;
     }
+
+    const message =
+      quoteRequestError !== null
+        ? `quote endpoint failed (${quoteRequestError}); chart fallback failed (${fallback.error ?? 'unknown'})`
+        : `symbol missing from quote response; chart fallback failed (${fallback.error ?? 'unknown'})`;
+
+    errors.push({
+      symbol: fallback.symbol,
+      message
+    });
   }
 
   return {
