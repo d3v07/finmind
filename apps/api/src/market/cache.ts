@@ -6,7 +6,7 @@
  * that is at most TTL seconds old without hammering Yahoo Finance.
  */
 
-import type { MarketSnapshot } from './realtime';
+import type { MarketSnapshot } from './realtime.js';
 
 interface Entry {
   snapshot: MarketSnapshot;
