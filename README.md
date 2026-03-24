@@ -1,116 +1,109 @@
 # FinMind
 
-FinMind is a full-stack financial research workspace that wraps a Dexter-style agent flow behind a web UI.
+Financial research workspace with agent-driven analysis and multi-perspective artifact rendering.
 
-## What Works Now
-- JWT auth (register/login/me)
-- Session management (create/list)
-- Query execution and query history per session
-- Agent adapter with four modes:
-  - `dexter` (recommended, executes the Dexter agent via subprocess)
-  - `openrouter` (direct model call without tool execution)
-  - `mock` (offline fallback)
-  - `auto` (tries Dexter first, falls back as needed)
-- Guided workflow buttons + advanced research mode in UI
-- Expanded guided preset library (swing trade, earnings trade, pair trade, and additional templates)
-- Markdown rendering for responses (no raw `###`/`**` tokens in UI)
-- Dedicated top-level app views: Dashboard, Research, Watchlist, Portfolio, Alerts, Documents, Comparisons, Settings
-- First-run startup guide for new users + persisted dark mode toggle
-- Artifact rendering:
-  - inline price trend charts (single + multi-ticker)
-  - side-by-side comparison metrics table for pair analysis
-  - macro context cards (proxy basket with chart-derived fallback)
-  - earnings calendar card (date confidence + source links)
-  - 7-day news sentiment timeline + headline sentiment pills
-  - options activity summary card (signal + call/put ratio extraction)
-  - ownership trend card (institutional + insider direction)
-  - filing change detector card (recent filing deltas + risk chip)
-  - transcript Q&A extraction card (question/answer summaries + sentiment)
-  - source confidence badges, contradiction check, assumption stress scenarios, thesis memory evolution
-  - multi-agent orchestration trace (planner/collector/critic)
-  - clickable source links (from Dexter web/filings tool calls)
-- Export actions per response: PDF, Markdown, JSON
-- Guided short-output mode + advanced depth control
-- Feature Lab module with:
-  - command palette + keyboard shortcuts
-  - saved view presets
-  - one-click report composer
-  - portfolio import, factor/concentration heatmap, rebalance suggestions, position sizing
-  - ticker/scenario alerts
-  - decision journal
-  - shared workspace/member roles
-  - comments/annotations, approval workflow, expiring share links
-  - Slack/Discord/Email distribution logs + webhook registration/test
-  - enterprise controls: SSO provider settings, billing quotas, compliance controls, white-label theme/domain
-  - weekly brief generation + session memory summary
-- Provider diagnostics panel (OpenRouter / Financial Datasets / Exa)
-- Secrets validation endpoint + startup blocker modal for critical missing secrets
-- Query usage + cost metering shown per response
-- Budget guardrails (daily/monthly/session/per-query caps)
-- Async research queue endpoints with job polling
-- Query execution timeline artifacts for auditability
-- Watchlist management (create watchlist, add/remove tickers)
-- REST API and tRPC API exposed from the same backend
-- Persistent local storage via JSON file (`.finmind/data.json`) by default
+Designed for traders and analysts who want to combine real-time data (news, filings, options activity, earnings) with structured reasoning (multi-agent Q&A, thesis memory, contradiction detection).
 
-## Product Roadmap
-- Full market gap analysis + 50-feature phased checklist:
-  - `docs/PRODUCT_GAP_ANALYSIS_AND_50_FEATURE_ROADMAP.md`
-- Current implementation checklist:
-  - `docs/IMPLEMENTATION_PHASE_CHECKLIST.md`
+## Evidence
 
-## Tech Stack
-- Backend: Bun, Express, tRPC, Zod
-- Frontend: React 19, Vite
-- Shared package: Zod schemas + types
-- Optional DB scaffolding: Drizzle + MySQL/TiDB
+**Agent system** — Subprocess-based agent (Dexter) executes 3 roles (Planner/Collector/Critic) with tool access to:
+- Real-time pricing (Exa)
+- Financial datasets (company filings, earnings calendars, ownership trends)
+- Web search (news, sentiment)
 
-## Monorepo Layout
-- `apps/api` backend server
-- `apps/web` frontend app
-- `packages/shared` shared types/schemas
+(`apps/api/src/dexter/`)
 
-## Local Development
+**Artifact rendering** — 10+ structured output types for research context:
+- Price trend charts (single + multi-ticker)
+- Comparison metrics tables (pair analysis)
+- Earnings calendar + macro context
+- Options activity summary (call/put ratio)
+- Ownership trends (institutional + insider direction)
+- Filing change detector (recent SEC filing deltas)
+- Transcript Q&A (earnings call summaries)
+- Contradictions + confidence badges
+- Thesis memory evolution
 
-If `bun` is not on your PATH, use the wrapper script `./scripts/bun` instead of `bun`.
+(`apps/api/src/features/research/artifacts.ts`)
 
-1. Install dependencies:
+**Research templates** — 3 guided modes for structured workflows:
+- Swing trade setup analysis
+- Earnings trade thesis building
+- Pair/spread trade comparison
+
+(`apps/web/src/pages/Research.tsx` → guided mode UI)
+
+**Workspace** — Multi-user research environment with:
+- Persistent sessions (query history, saved views)
+- Watchlist management (add/track tickers)
+- Decision journal (reasoning log)
+- Member roles + approval workflow
+- Comments/annotations on analysis
+- Export (PDF, Markdown, JSON per response)
+
+(`apps/api/src/features/workspace/`)
+
+**Authentication** — JWT-based auth with bcrypt-hashed passwords, session persistence.
+
+(`apps/api/src/auth/`)
+
+**Stack** — Bun runtime, Express backend, tRPC API, React 19 frontend, Zod validation, Drizzle ORM (optional), persistent JSON storage via `.finmind/data.json`.
+
+## How It Works
+
+1. **User launches research session** → Frontend loads Research page with guided + advanced modes
+2. **Guided mode** → Preset templates (swing trade, earnings, pair trade) populate a thesis structure
+3. **User submits query** → Express backend routes to agent orchestrator
+4. **Agent runs** → Dexter subprocess executes 3-role planner/collector/critic flow with tool calls (web search, data APIs)
+5. **Artifacts render** → Response is parsed into structured output (charts, tables, calendars, contradiction flags) and displayed inline
+6. **User exports** → PDF/Markdown/JSON export per response
+7. **Workspace persists** → Session history saved, watchlist tracked, decision journal kept
+
+## Setup
+
+### Prerequisites
+- Bun 1.3.8+
+- Optional: MySQL/TiDB for persistent database (file-based JSON default)
+
+### Install
 ```bash
 ./scripts/bun install
 ```
 
-2. Start API (port `3001`):
+### Run Tests
 ```bash
-./scripts/bun run dev:api
+./scripts/bun run test
 ```
 
-3. Start web app (port `5173`):
+### Run Locally
 ```bash
+# Terminal 1: API (port 3001)
+./scripts/bun run dev:api
+
+# Terminal 2: Web (port 5173)
 ./scripts/bun run dev:web
 ```
 
-4. Open:
-- Web: `http://localhost:5173`
-- Health: `http://localhost:3001/health`
-- API Docs (JSON): `http://localhost:3001/api/docs`
-- API Docs (Markdown): `http://localhost:3001/api/docs.md`
-- OpenAPI Spec: `http://localhost:3001/api/openapi.json`
-- Swagger UI: `http://localhost:3001/api/swagger`
+Visit `http://localhost:5173`.
 
-## Environment
-Copy `.env.example` to `.env` in repo root.
-
-Recommended live mode:
-```env
-FINMIND_AGENT_MODE=openrouter
-OPENROUTER_API_KEY=...
-FINANCIAL_DATASETS_API_KEY=...
-EXASEARCH_API_KEY=...
+### Environment Variables
+```bash
+FINMIND_AGENT_MODE=openrouter  # or 'dexter' (default) or 'mock'
+OPENROUTER_API_KEY=...         # For direct LLM calls
+FINANCIAL_DATASETS_API_KEY=... # Company filings, earnings, ownership data
+EXASEARCH_API_KEY=...          # Web search
 ```
 
-## Validation Commands
+## Testing
 ```bash
 ./scripts/bun run lint
 ./scripts/bun run typecheck
 ./scripts/bun run test
 ```
+
+## Roadmap
+- Full 50-feature gap analysis: `docs/PRODUCT_GAP_ANALYSIS_AND_50_FEATURE_ROADMAP.md`
+- Implementation checklist: `docs/IMPLEMENTATION_PHASE_CHECKLIST.md`
+
+## License
+MIT
